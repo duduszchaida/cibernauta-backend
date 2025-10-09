@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id      Int      @id @default(autoincrement())
+  firebase_uid String   @unique
+  admin        Boolean  @default(false)
+  user_name    String   @unique @db.VarChar(50)
+  user_email   String   @unique @db.VarChar(70)
+  created_at   DateTime @default(now())
+  
+  saves        Save[]
+
+  @@map("users")
+}
+
+model Game {
+  game_id     Int    @id @default(autoincrement())
+  game_title  String @unique @db.VarChar(50)
+  description String @db.Text
+  difficulty  Int
+  
+  levels      Level[]
+  highscores  Highscore[]
+
+  @@map("games")
+}
+
+model Level {
+  level_id    Int    @id @default(autoincrement())
+  level_title String @db.VarChar(50)
+  game_id     Int
+  
+  game        Game            @relation(fields: [game_id], references: [game_id])
+  progress    LevelProgress[]
+
+  @@map("levels")
+}
+
+model Save {
+  save_id   Int @id @default(autoincrement())
+  save_slot Int @default(1)
+  user_id   Int
+  
+  user          User            @relation(fields: [user_id], references: [user_id])
+  levelProgress LevelProgress[]
+  highscores    Highscore[]
+
+  @@unique([user_id, save_slot])
+  @@map("save")
+}
+
+model Highscore {
+  highscore_id Int      @id @default(autoincrement())
+  score        Int      @default(0)
+  created_at   DateTime @default(now())
+  save_id      Int
+  game_id      Int
+  
+  save Save @relation(fields: [save_id], references: [save_id])
+  game Game @relation(fields: [game_id], references: [game_id])
+
+  @@map("highscore")
+}
+
+model LevelProgress {
+  progress_id Int     @id @default(autoincrement())
+  highscore   Int     @default(0)
+  unlocked    Boolean @default(false)
+  save_id     Int
+  level_id    Int
+  
+  save  Save  @relation(fields: [save_id], references: [save_id])
+  level Level @relation(fields: [level_id], references: [level_id])
+
+  @@unique([save_id, level_id])
+  @@map("level_progress")
+}
