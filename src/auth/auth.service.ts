@@ -44,8 +44,7 @@ export class AuthService {
           admin: false,
         },
       });
-
-      // Gerar token customizado
+      
       const customToken = await this.firebaseAdmin.auth().createCustomToken(firebaseUser.uid);
 
       return {

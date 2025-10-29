@@ -8,7 +8,7 @@ export class GamesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createGameDto: CreateGameDto) {
-    const { game_title, description, difficulty, levels } = createGameDto;
+    const { game_title, description, difficulty, image_url, levels } = createGameDto;
 
     const existingGame = await this.prisma.game.findUnique({
       where: { game_title },
@@ -18,12 +18,13 @@ export class GamesService {
       throw new ConflictException('Jogo com este título já existe');
     }
 
-    
+
     const game = await this.prisma.game.create({
       data: {
         game_title,
         description,
         difficulty,
+        image_url,
         levels: {
           create: levels.map((level) => ({
             level_title: level.level_title,

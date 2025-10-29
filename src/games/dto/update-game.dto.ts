@@ -17,6 +17,10 @@ export class UpdateGameDto {
   difficulty?: number;
 
   @IsOptional()
+  @IsString()
+  image_url?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateLevelDto)

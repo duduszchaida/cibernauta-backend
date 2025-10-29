@@ -25,7 +25,8 @@ model Game {
   game_title  String @unique @db.VarChar(50)
   description String @db.Text
   difficulty  Int
-  
+  image_url   String? @db.Text
+
   levels      Level[]
   highscores  Highscore[]
 

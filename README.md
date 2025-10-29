@@ -1,98 +1,131 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Cibernauta - IFPR
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tecnologias Utilizadas
 
-## Description
+### Backend
+- NestJS - Framework Node.js para APIs
+- TypeScript - Linguagem de programação
+- PostgreSQL - Banco de dados relacional
+- Prisma - ORM (Object-Relational Mapping)
+- Firebase Admin SDK - Autenticação
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Frontend
+- React 18 - Biblioteca JavaScript
+- Vite - Build tool e dev server
+- TypeScript - Linguagem de programação
+- Tailwind CSS - Framework de estilização
+- Firebase - Autenticação
+---
 
-## Project setup
+## Pré-requisitos
 
-```bash
-$ npm install
-```
+Certifique-se de ter instalado:
 
-## Compile and run the project
+   Node.js (versão 18 ou superior)
+   PostgreSQL (versão 12 ou superior)
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+## Instalação
 
-# production mode
-$ npm run start:prod
-```
+### Passo 1: Preparar o Ambiente
 
-## Run tests
+Abra o terminal/prompt de comando e navegue até a pasta do projeto:
 
-```bash
-# unit tests
-$ npm run test
+cd C:\Users\eduar\Documents\IFPR\projeto
 
-# e2e tests
-$ npm run test:e2e
+### Passo 2: Instalar Dependências do Backend
 
-# test coverage
-$ npm run test:cov
-```
+cd cibernauta-backend
+npm install
 
-## Deployment
+Este comando instalará todas as dependências necessárias do backend (NestJS, Prisma, Firebase, etc.).
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Passo 3: Instalar Dependências do Frontend
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Abra outra janela do terminal/promp, vá até a pasta do projeto e instale as dependências do frontend:
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+cd cibernauta-frontend
+npm install
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Este comando instalará todas as dependências do frontend (React, Vite, Tailwind CSS, etc.).
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Configuração
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Passo 1: Iniciar o Backend
 
-## Support
+No terminal na pasta cibernauta-backend:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+npm run start:dev
 
-## Stay in touch
+O servidor backend estará rodando em: http://localhost:3001
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Passo 2: Iniciar o Frontend
 
-## License
+No outro terminal na pasta cibernauta-frontend:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+npm run dev
+
+O servidor frontend estará rodando em: http://localhost:5173
+
+### Passo 3: Acessar o Sistema
+
+Abra seu navegador e acesse: http://localhost:5173
+
+---
+
+## Navegação e Uso
+
+### 1. Página Inicial
+
+Ao acessar http://localhost:5173, você verá a página inicial do sistema.
+
+### 2. Cadastro de Usuário
+
+1. Clique no botão "Cadastrar-se"
+2. Preencha o formulário com:
+   - Nome
+   - Email
+   - Senha (mínimo 6 caracteres)
+3. Clique em "Criar conta"
+4. Você será redirecionado automaticamente após o cadastro
+
+### 3. Login
+
+1. Se já tiver uma conta, insira seu email e senha
+3. Clique em "Entrar"
+
+### 4. Dashboard de Jogos
+
+Após o login, você será redirecionado para o dashboard com:
+
+- Lista de Jogos Disponíveis: Visualize todos os jogos cadastrados
+- Informações do Jogo: Título, descrição, dificuldade, imagem
+
+### 5. Jogando
+
+1. Na lista de jogos, clique no card de um jogo específico
+2. Você será redirecionado para a tela do jogo
+3. Seu progresso e pontuação serão salvos automaticamente
+
+
+### 6. Área Administrativa
+
+Se sua conta tiver permissões de administrador:
+
+1. Criar Novo Jogo:
+   - Clique em "Criar Jogo" no dashboard de games
+   - Preencha: título, descrição, dificuldade, URL da imagem
+   - Clique em "Salvar"
+
+2. Editar Jogo:
+   - Na lista de jogos, clique em "Editar"
+   - Modifique os campos necessários
+   - Clique em "Salvar Alterações"
+
+3. Excluir Jogo:
+   - Na lista de jogos, clique em "Excluir"
+   - Confirme a exclusão

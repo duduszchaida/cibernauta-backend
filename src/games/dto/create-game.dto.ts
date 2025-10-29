@@ -24,6 +24,10 @@ export class CreateGameDto {
   @Min(0)
   difficulty: number;
 
+  @IsOptional()
+  @IsString()
+  image_url?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateLevelDto)
