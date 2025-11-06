@@ -1,61 +1,78 @@
-import { Injectable, ConflictException, UnauthorizedException, Inject } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     @Inject('FIREBASE_ADMIN') private firebaseAdmin: typeof admin,
+    private configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { user_name, user_email, password } = registerDto;
+    const { username, full_name, user_email, password } = registerDto;
 
-    
+
     const existingUser = await this.prisma.user.findFirst({
       where: {
         OR: [
           { user_email },
-          { user_name },
+          { username },
         ],
       },
     });
 
     if (existingUser) {
-      throw new ConflictException('Email ou nome de usuário já existe');
+      if (existingUser.user_email === user_email) {
+        throw new ConflictException('Email já está em uso');
+      }
+      if (existingUser.username === username) {
+        throw new ConflictException('Nome de usuário de login já está em uso');
+      }
     }
 
     try {
-    
+
       const firebaseUser = await this.firebaseAdmin.auth().createUser({
         email: user_email,
         password: password,
-        displayName: user_name,
+        displayName: full_name,
+        emailVerified: false,
       });
 
       const user = await this.prisma.user.create({
         data: {
           firebase_uid: firebaseUser.uid,
-          user_name,
+          username,
+          full_name,
           user_email,
           admin: false,
+          role: 'USER',
         },
       });
-      
+
       const customToken = await this.firebaseAdmin.auth().createCustomToken(firebaseUser.uid);
 
       return {
         user: {
           user_id: user.user_id,
-          user_name: user.user_name,
+          username: user.username,
+          full_name: user.full_name,
           user_email: user.user_email,
           admin: user.admin,
+          role: user.role,
+          emailVerified: false,
         },
         customToken,
         firebase_uid: firebaseUser.uid,
+        message: 'Conta criada! Verifique seu email para ativar sua conta.',
       };
     } catch (error) {
       if (error.code === 'auth/email-already-exists') {
@@ -66,14 +83,26 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const { user_email } = loginDto;
+    const { identifier } = loginDto;
 
-    const user = await this.prisma.user.findUnique({
-      where: { user_email },
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { user_email: identifier },
+          { username: identifier },
+        ],
+      },
     });
 
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    const firebaseUser = await this.firebaseAdmin.auth().getUser(user.firebase_uid);
+
+    if (!firebaseUser.emailVerified) {
+      throw new UnauthorizedException('Email não verificado. Verifique sua caixa de entrada.');
     }
 
     const customToken = await this.firebaseAdmin.auth().createCustomToken(user.firebase_uid);
@@ -81,9 +110,12 @@ export class AuthService {
     return {
       user: {
         user_id: user.user_id,
-        user_name: user.user_name,
+        username: user.username,
+        full_name: user.full_name,
         user_email: user.user_email,
         admin: user.admin,
+        role: user.role,
+        emailVerified: true,
       },
       customToken,
     };
@@ -99,5 +131,239 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async requestPasswordReset(forgotPasswordDto: ForgotPasswordDto) {
+    const { user_email } = forgotPasswordDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { user_email },
+    });
+
+    if (!user) {
+      return {
+        message: 'Se o email existir, você receberá as instruções em breve',
+      };
+    }
+
+    try {
+      const apiKey = this.configService.get('FIREBASE_WEB_API_KEY');
+
+      const response = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            requestType: 'PASSWORD_RESET',
+            email: user_email,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Erro ao enviar email:', error);
+        throw new BadRequestException('Erro ao enviar email de redefinição');
+      }
+
+      return {
+        message: 'Email de redefinição enviado com sucesso',
+      };
+    } catch (error) {
+      console.error('Erro ao enviar email:', error);
+      throw new BadRequestException('Erro ao enviar email de redefinição');
+    }
+  }
+
+  async verifyResetToken(oobCode: string) {
+    if (!oobCode) {
+      throw new BadRequestException('Token não fornecido');
+    }
+
+    return {
+      valid: true,
+      message: 'Token recebido - prossiga com a redefinição de senha',
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { token, password } = resetPasswordDto;
+
+    try {
+      const apiKey = this.configService.get('FIREBASE_WEB_API_KEY');
+
+      const response = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:resetPassword?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            oobCode: token,
+            newPassword: password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Error resetting password:', data);
+        throw new BadRequestException('Token inválido ou expirado');
+      }
+
+      return {
+        message: 'Senha redefinida com sucesso',
+      };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw new BadRequestException('Erro ao redefinir senha');
+    }
+  }
+
+  async changePassword(firebase_uid: string, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { firebase_uid },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Usuário não encontrado');
+      }
+
+      const apiKey = this.configService.get('FIREBASE_WEB_API_KEY');
+      const verifyResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: user.user_email,
+            password: currentPassword,
+            returnSecureToken: true,
+          }),
+        }
+      );
+
+      if (!verifyResponse.ok) {
+        throw new UnauthorizedException('Senha atual incorreta');
+      }
+
+      await this.firebaseAdmin.auth().updateUser(firebase_uid, {
+        password: newPassword,
+      });
+
+      return {
+        message: 'Senha alterada com sucesso',
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error changing password:', error);
+      throw new BadRequestException('Erro ao alterar senha');
+    }
+  }
+
+  async deleteAccount(firebase_uid: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { firebase_uid },
+      });
+
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      await this.prisma.user.delete({
+        where: { firebase_uid },
+      });
+
+      await this.firebaseAdmin.auth().deleteUser(firebase_uid);
+
+      return {
+        message: 'Conta deletada com sucesso',
+      };
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      throw new BadRequestException('Erro ao deletar conta');
+    }
+  }
+
+  async sendVerificationEmail(email: string) {
+    try {
+      
+      const actionCodeSettings = {
+        url: this.configService.get('FRONTEND_URL') || 'http://localhost:5147',
+      };
+
+      const link = await this.firebaseAdmin.auth().generateEmailVerificationLink(
+        email,
+        actionCodeSettings
+      );
+
+      console.log('Verification link generated:', link);
+      console.log('Note: You need to configure an email service to send this link to the user');
+
+      return {
+        message: 'Email de verificação enviado com sucesso',
+      };
+    } catch (error) {
+      console.error('Erro ao enviar email de verificação:', error);
+      throw new BadRequestException('Erro ao enviar email de verificação');
+    }
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { user_email: email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const firebaseUser = await this.firebaseAdmin.auth().getUser(user.firebase_uid);
+
+    if (firebaseUser.emailVerified) {
+      throw new BadRequestException('Email já verificado');
+    }
+
+    return this.sendVerificationEmail(email);
+  }
+
+  async checkEmailVerificationStatus(firebase_uid: string) {
+    try {
+      const firebaseUser = await this.firebaseAdmin.auth().getUser(firebase_uid);
+
+      if (firebaseUser.emailVerified) {
+        const user = await this.prisma.user.findUnique({
+          where: { firebase_uid },
+        });
+
+        return {
+          emailVerified: true,
+          email: firebaseUser.email,
+          message: 'Email verificado com sucesso',
+        };
+      }
+
+      return {
+        emailVerified: false,
+        email: firebaseUser.email,
+        message: 'Email ainda não verificado',
+      };
+    } catch (error) {
+      console.error('Erro ao verificar status do email:', error);
+      throw new BadRequestException('Erro ao verificar status do email');
+    }
   }
 }

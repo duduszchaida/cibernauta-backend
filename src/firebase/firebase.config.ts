@@ -1,4 +1,3 @@
-// src/firebase/firebase.config.ts
 import * as admin from 'firebase-admin';
 
 export const initializeFirebase = () => {

@@ -1,6 +1,4 @@
-import { IsString, IsInt, Min, IsArray, ValidateNested, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
-import { CreateLevelDto } from './create-game.dto';
+import { IsString, IsInt, Min, Max, IsOptional, IsBoolean } from 'class-validator';
 
 export class UpdateGameDto {
   @IsOptional()
@@ -13,7 +11,8 @@ export class UpdateGameDto {
 
   @IsOptional()
   @IsInt()
-  @Min(0)
+  @Min(1)
+  @Max(3)
   difficulty?: number;
 
   @IsOptional()
@@ -21,8 +20,10 @@ export class UpdateGameDto {
   image_url?: string;
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateLevelDto)
-  levels?: CreateLevelDto[];
+  @IsString()
+  game_url?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
 }

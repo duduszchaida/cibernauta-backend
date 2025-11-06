@@ -1,6 +1,14 @@
-import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import { ChangeType } from '@prisma/client';
 
-export class CreateGameDto {
+export class CreatePendingGameDto {
+  @IsOptional()
+  @IsInt()
+  game_id?: number;
+
+  @IsEnum(ChangeType)
+  change_type: ChangeType;
+
   @IsString()
   @IsNotEmpty()
   game_title: string;

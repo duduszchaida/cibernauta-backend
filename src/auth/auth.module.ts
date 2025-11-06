@@ -14,6 +14,6 @@ import { initializeFirebase } from '../firebase/firebase.config';
     },
     AuthService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, 'FIREBASE_ADMIN'],
 })
 export class AuthModule {}

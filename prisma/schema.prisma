@@ -7,51 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
 model User {
   user_id      Int      @id @default(autoincrement())
   firebase_uid String   @unique
   admin        Boolean  @default(false)
-  user_name    String   @unique @db.VarChar(50)
+  role         UserRole @default(USER)
+  username     String   @unique @db.VarChar(16)
+  full_name    String   @db.VarChar(50)
   user_email   String   @unique @db.VarChar(70)
   created_at   DateTime @default(now())
-  
-  saves        Save[]
+
+  saves                Save[]
+  gamePendingChanges   GamePending[]
+  moderatorRequests    ModeratorRequest[]  @relation("ModeratorRequests")
+  reviewedRequests     ModeratorRequest[]  @relation("ReviewedRequests")
 
   @@map("users")
 }
 
 model Game {
-  game_id     Int    @id @default(autoincrement())
-  game_title  String @unique @db.VarChar(50)
-  description String @db.Text
+  game_id     Int     @id @default(autoincrement())
+  game_title  String  @unique @db.VarChar(50)
+  description String  @db.Text
   difficulty  Int
   image_url   String? @db.Text
+  game_url    String? @db.Text
+  enabled     Boolean @default(true)
 
-  levels      Level[]
   highscores  Highscore[]
 
   @@map("games")
-}
-
-model Level {
-  level_id    Int    @id @default(autoincrement())
-  level_title String @db.VarChar(50)
-  game_id     Int
-  
-  game        Game            @relation(fields: [game_id], references: [game_id])
-  progress    LevelProgress[]
-
-  @@map("levels")
 }
 
 model Save {
   save_id   Int @id @default(autoincrement())
   save_slot Int @default(1)
   user_id   Int
-  
-  user          User            @relation(fields: [user_id], references: [user_id])
-  levelProgress LevelProgress[]
-  highscores    Highscore[]
+
+  user       User        @relation(fields: [user_id], references: [user_id])
+  highscores Highscore[]
 
   @@unique([user_id, save_slot])
   @@map("save")
@@ -63,23 +63,61 @@ model Highscore {
   created_at   DateTime @default(now())
   save_id      Int
   game_id      Int
-  
+
   save Save @relation(fields: [save_id], references: [save_id])
   game Game @relation(fields: [game_id], references: [game_id])
 
   @@map("highscore")
 }
 
-model LevelProgress {
-  progress_id Int     @id @default(autoincrement())
-  highscore   Int     @default(0)
-  unlocked    Boolean @default(false)
-  save_id     Int
-  level_id    Int
-  
-  save  Save  @relation(fields: [save_id], references: [save_id])
-  level Level @relation(fields: [level_id], references: [level_id])
+enum ChangeType {
+  CREATE
+  UPDATE
+}
 
-  @@unique([save_id, level_id])
-  @@map("level_progress")
+enum ChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model GamePending {
+  change_id         Int          @id @default(autoincrement())
+  game_id           Int?
+  change_type       ChangeType
+  status            ChangeStatus @default(PENDING)
+  game_title        String       @db.VarChar(50)
+  description       String       @db.Text
+  difficulty        Int
+  image_url         String?      @db.Text
+  game_url          String?      @db.Text
+  enabled           Boolean      @default(true)
+  created_by_user_id Int         @default(1)
+  created_at        DateTime     @default(now())
+  reviewed_at       DateTime?
+
+  createdBy User @relation(fields: [created_by_user_id], references: [user_id])
+
+  @@map("game_pending_changes")
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ModeratorRequest {
+  request_id    Int           @id @default(autoincrement())
+  user_id       Int
+  reason        String?       @db.Text
+  status        RequestStatus @default(PENDING)
+  created_at    DateTime      @default(now())
+  reviewed_at   DateTime?
+  reviewed_by   Int?
+
+  user          User          @relation("ModeratorRequests", fields: [user_id], references: [user_id])
+  reviewer      User?         @relation("ReviewedRequests", fields: [reviewed_by], references: [user_id])
+
+  @@map("moderator_requests")
 }
