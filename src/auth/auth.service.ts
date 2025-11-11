@@ -58,7 +58,8 @@ export class AuthService {
         },
       });
 
-      const customToken = await this.firebaseAdmin.auth().createCustomToken(firebaseUser.uid);
+      
+      await this.sendVerificationEmail(user_email, password);
 
       return {
         user: {
@@ -70,8 +71,6 @@ export class AuthService {
           role: user.role,
           emailVerified: false,
         },
-        customToken,
-        firebase_uid: firebaseUser.uid,
         message: 'Conta criada! Verifique seu email para ativar sua conta.',
       };
     } catch (error) {
@@ -298,20 +297,135 @@ export class AuthService {
     }
   }
 
-  async sendVerificationEmail(email: string) {
+  async sendVerificationEmail(email: string, password: string) {
     try {
-      
-      const actionCodeSettings = {
-        url: this.configService.get('FRONTEND_URL') || 'http://localhost:5147',
-      };
+      const apiKey = this.configService.get('FIREBASE_WEB_API_KEY');
 
-      const link = await this.firebaseAdmin.auth().generateEmailVerificationLink(
-        email,
-        actionCodeSettings
+      
+      const loginResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+            returnSecureToken: true,
+          }),
+        }
       );
 
-      console.log('Verification link generated:', link);
-      console.log('Note: You need to configure an email service to send this link to the user');
+      if (!loginResponse.ok) {
+        const error = await loginResponse.json();
+        console.error('Erro ao fazer login para enviar email:', error);
+        throw new BadRequestException('Erro ao autenticar para enviar email');
+      }
+
+      const loginData = await loginResponse.json();
+      const idToken = loginData.idToken;
+
+     
+      const response = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            requestType: 'VERIFY_EMAIL',
+            idToken: idToken,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Erro ao enviar email:', error);
+        throw new BadRequestException('Erro ao enviar email de verificação');
+      }
+
+      const data = await response.json();
+      console.log('Email de verificação enviado com sucesso para:', email);
+
+      return {
+        message: 'Email de verificação enviado com sucesso',
+      };
+    } catch (error) {
+      console.error('Erro ao enviar email de verificação:', error);
+      throw new BadRequestException('Erro ao enviar email de verificação');
+    }
+  }
+
+  async sendVerificationEmailWithToken(firebase_uid: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { firebase_uid },
+      });
+
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      const firebaseUser = await this.firebaseAdmin.auth().getUser(firebase_uid);
+
+      if (firebaseUser.emailVerified) {
+        throw new BadRequestException('Email já verificado');
+      }
+
+      
+      const customToken = await this.firebaseAdmin.auth().createCustomToken(firebase_uid);
+
+      const apiKey = this.configService.get('FIREBASE_WEB_API_KEY');
+
+      
+      const tokenResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token: customToken,
+            returnSecureToken: true,
+          }),
+        }
+      );
+
+      if (!tokenResponse.ok) {
+        const error = await tokenResponse.json();
+        console.error('Erro ao trocar custom token:', error);
+        throw new BadRequestException('Erro ao autenticar usuário');
+      }
+
+      const tokenData = await tokenResponse.json();
+      const idToken = tokenData.idToken;
+
+    
+      const response = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            requestType: 'VERIFY_EMAIL',
+            idToken: idToken,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Erro ao enviar email:', error);
+        throw new BadRequestException('Erro ao enviar email de verificação');
+      }
+
+      console.log('Email de verificação reenviado com sucesso para:', user.user_email);
 
       return {
         message: 'Email de verificação enviado com sucesso',
@@ -331,13 +445,7 @@ export class AuthService {
       throw new NotFoundException('Usuário não encontrado');
     }
 
-    const firebaseUser = await this.firebaseAdmin.auth().getUser(user.firebase_uid);
-
-    if (firebaseUser.emailVerified) {
-      throw new BadRequestException('Email já verificado');
-    }
-
-    return this.sendVerificationEmail(email);
+    return this.sendVerificationEmailWithToken(user.firebase_uid);
   }
 
   async checkEmailVerificationStatus(firebase_uid: string) {
