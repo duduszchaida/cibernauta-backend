@@ -83,7 +83,6 @@ export class GamesService {
 
     const { controls, ...gameData } = updateGameDto as any;
 
-    // Se controls foi enviado, deletar os antigos e criar novos
     if (controls !== undefined) {
       await this.prisma.gameControl.deleteMany({
         where: { game_id: id },
