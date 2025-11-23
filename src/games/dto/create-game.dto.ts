@@ -1,4 +1,15 @@
-import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class GameControlDto {
+  @IsString()
+  @IsNotEmpty()
+  key_image: string;
+
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+}
 
 export class CreateGameDto {
   @IsString()
@@ -23,6 +34,16 @@ export class CreateGameDto {
   game_url?: string;
 
   @IsOptional()
+  @IsString()
+  game_type?: string;
+
+  @IsOptional()
   @IsBoolean()
   enabled?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GameControlDto)
+  controls?: GameControlDto[];
 }

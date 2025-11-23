@@ -1,5 +1,7 @@
-import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsBoolean, IsEnum, IsArray, ValidateNested } from 'class-validator';
 import { ChangeType } from '@prisma/client';
+import { Type } from 'class-transformer';
+import { GameControlDto } from './create-game.dto';
 
 export class CreatePendingGameDto {
   @IsOptional()
@@ -31,6 +33,16 @@ export class CreatePendingGameDto {
   game_url?: string;
 
   @IsOptional()
+  @IsString()
+  game_type?: string;
+
+  @IsOptional()
   @IsBoolean()
   enabled?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GameControlDto)
+  controls?: GameControlDto[];
 }

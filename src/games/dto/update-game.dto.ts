@@ -24,6 +24,10 @@ export class UpdateGameDto {
   game_url?: string;
 
   @IsOptional()
+  @IsString()
+  game_type?: string;
+
+  @IsOptional()
   @IsBoolean()
   enabled?: boolean;
 }

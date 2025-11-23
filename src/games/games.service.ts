@@ -11,7 +11,7 @@ export class GamesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createGameDto: CreateGameDto) {
-    const { game_title, description, difficulty, image_url, game_url, enabled } = createGameDto;
+    const { game_title, description, difficulty, image_url, game_url, game_type, enabled, controls } = createGameDto;
 
     const existingGame = await this.prisma.game.findUnique({
       where: { game_title },
@@ -28,7 +28,20 @@ export class GamesService {
         difficulty,
         image_url,
         game_url,
+        game_type: game_type || 'external',
         enabled,
+        controls: controls ? {
+          create: controls.map((control, index) => ({
+            key_image: control.key_image,
+            description: control.description,
+            order: index,
+          })),
+        } : undefined,
+      },
+      include: {
+        controls: {
+          orderBy: { order: 'asc' },
+        },
       },
     });
 
@@ -40,12 +53,22 @@ export class GamesService {
       orderBy: {
         game_id: 'desc',
       },
+      include: {
+        controls: {
+          orderBy: { order: 'asc' },
+        },
+      },
     });
   }
 
   async findOne(id: number) {
     const game = await this.prisma.game.findUnique({
       where: { game_id: id },
+      include: {
+        controls: {
+          orderBy: { order: 'asc' },
+        },
+      },
     });
 
     if (!game) {
@@ -58,9 +81,32 @@ export class GamesService {
   async update(id: number, updateGameDto: UpdateGameDto) {
     await this.findOne(id);
 
+    const { controls, ...gameData } = updateGameDto as any;
+
+    // Se controls foi enviado, deletar os antigos e criar novos
+    if (controls !== undefined) {
+      await this.prisma.gameControl.deleteMany({
+        where: { game_id: id },
+      });
+    }
+
     const game = await this.prisma.game.update({
       where: { game_id: id },
-      data: updateGameDto,
+      data: {
+        ...gameData,
+        controls: controls ? {
+          create: controls.map((control: any, index: number) => ({
+            key_image: control.key_image,
+            description: control.description,
+            order: index,
+          })),
+        } : undefined,
+      },
+      include: {
+        controls: {
+          orderBy: { order: 'asc' },
+        },
+      },
     });
 
     return game;
@@ -77,13 +123,13 @@ export class GamesService {
   }
 
   async createPendingGame(createPendingGameDto: CreatePendingGameDto, userRole: string, userId: number) {
-    const { game_title, description, difficulty, image_url, game_url, enabled, change_type, game_id } = createPendingGameDto;
+    const { game_title, description, difficulty, image_url, game_url, game_type, enabled, change_type, game_id } = createPendingGameDto;
 
     if (userRole === 'ADMIN') {
       if (change_type === 'CREATE') {
-        return this.create({ game_title, description, difficulty, image_url, game_url, enabled });
+        return this.create({ game_title, description, difficulty, image_url, game_url, game_type, enabled });
       } else {
-        return this.update(game_id!, { game_title, description, difficulty, image_url, game_url, enabled });
+        return this.update(game_id!, { game_title, description, difficulty, image_url, game_url, game_type, enabled });
       }
     }
 
@@ -96,6 +142,7 @@ export class GamesService {
         difficulty,
         image_url,
         game_url,
+        game_type: game_type || 'external',
         enabled,
         status: 'PENDING',
         created_by_user_id: userId,
@@ -148,7 +195,7 @@ export class GamesService {
     });
 
     if (approveDto.status === 'APPROVED') {
-      const { game_id, change_type, game_title, description, difficulty, image_url, game_url, enabled } = pendingChange;
+      const { game_id, change_type, game_title, description, difficulty, image_url, game_url, game_type, enabled } = pendingChange;
 
       if (change_type === 'CREATE') {
         const game = await this.prisma.game.create({
@@ -158,6 +205,7 @@ export class GamesService {
             difficulty,
             image_url,
             game_url,
+            game_type: game_type || 'external',
             enabled,
           },
         });
@@ -171,6 +219,7 @@ export class GamesService {
             difficulty,
             image_url,
             game_url,
+            game_type: game_type || 'external',
             enabled,
           },
         });
