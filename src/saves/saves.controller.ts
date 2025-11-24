@@ -9,10 +9,10 @@ import { FirebaseAuthGuard } from '../firebase/firebase.guard';
 export class SavesController {
   constructor(private readonly savesService: SavesService) {}
 
-  @Get()
-  async getSave(@Request() req) {
+  @Get(':gameId')
+  async getSave(@Request() req, @Param('gameId') gameId: string) {
     const userId = req.user.user_id;
-    return this.savesService.getSave(userId);
+    return this.savesService.getSave(userId, parseInt(gameId));
   }
 
   @Post()

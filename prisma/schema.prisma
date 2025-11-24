@@ -43,6 +43,7 @@ model Game {
 
   highscores  Highscore[]
   controls    GameControl[]
+  saves       Save[]
 
   @@map("games")
 }
@@ -60,14 +61,17 @@ model GameControl {
 }
 
 model Save {
-  save_id   Int      @id @default(autoincrement())
-  user_id   Int      @unique
-  save_data String?  @db.Text
+  save_id    Int      @id @default(autoincrement())
+  user_id    Int
+  game_id    Int
+  save_data  String?  @db.Text
   updated_at DateTime @default(now()) @updatedAt
 
   user       User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  game       Game        @relation(fields: [game_id], references: [game_id], onDelete: Cascade)
   highscores Highscore[]
 
+  @@unique([user_id, game_id])
   @@map("save")
 }
 
