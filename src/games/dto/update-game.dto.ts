@@ -1,4 +1,6 @@
-import { IsString, IsInt, Min, Max, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsInt, Min, Max, IsOptional, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { GameControlDto } from './create-game.dto';
 
 export class UpdateGameDto {
   @IsOptional()
@@ -30,4 +32,10 @@ export class UpdateGameDto {
   @IsOptional()
   @IsBoolean()
   enabled?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GameControlDto)
+  controls?: GameControlDto[];
 }

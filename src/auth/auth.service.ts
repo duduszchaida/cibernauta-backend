@@ -145,6 +145,12 @@ export class AuthService {
       };
     }
 
+    const firebaseUser = await this.firebaseAdmin.auth().getUser(user.firebase_uid);
+
+    if (!firebaseUser.emailVerified) {
+      throw new BadRequestException('Você precisa verificar seu email antes de redefinir a senha');
+    }
+
     try {
       const apiKey = this.configService.get('FIREBASE_WEB_API_KEY');
 

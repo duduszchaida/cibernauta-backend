@@ -4,7 +4,6 @@ import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { CreatePendingGameDto } from './dto/create-pending-game.dto';
 import { ApproveGameDto } from './dto/approve-game.dto';
-import { ChangeType, ChangeStatus } from '@prisma/client';
 
 @Injectable()
 export class GamesService {
@@ -121,15 +120,26 @@ export class GamesService {
 
     return { message: 'Jogo removido com sucesso' };
   }
+  
+  async getMyAllGames(userId: number) {
+    return this.prisma.gamePending.findMany({
+      where: {
+        created_by_user_id: userId,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+  }
 
   async createPendingGame(createPendingGameDto: CreatePendingGameDto, userRole: string, userId: number) {
-    const { game_title, description, difficulty, image_url, game_url, game_type, enabled, change_type, game_id } = createPendingGameDto;
+    const { game_title, description, difficulty, image_url, game_url, game_type, enabled, change_type, game_id, controls } = createPendingGameDto;
 
     if (userRole === 'ADMIN') {
       if (change_type === 'CREATE') {
-        return this.create({ game_title, description, difficulty, image_url, game_url, game_type, enabled });
+        return this.create({ game_title, description, difficulty, image_url, game_url, game_type, enabled, controls });
       } else {
-        return this.update(game_id!, { game_title, description, difficulty, image_url, game_url, game_type, enabled });
+        return this.update(game_id!, { game_title, description, difficulty, image_url, game_url, game_type, enabled, controls });
       }
     }
 
@@ -144,6 +154,7 @@ export class GamesService {
         game_url,
         game_type: game_type || 'external',
         enabled,
+        controls: controls ? JSON.parse(JSON.stringify(controls)) : null,
         status: 'PENDING',
         created_by_user_id: userId,
       },
@@ -157,6 +168,15 @@ export class GamesService {
       where: { status: 'PENDING' },
       orderBy: {
         created_at: 'desc',
+      },
+      include: {
+        createdBy: {
+          select: {
+            user_id: true,
+            username: true,
+            user_email: true,
+          },
+        },
       },
     });
   }
@@ -195,7 +215,7 @@ export class GamesService {
     });
 
     if (approveDto.status === 'APPROVED') {
-      const { game_id, change_type, game_title, description, difficulty, image_url, game_url, game_type, enabled } = pendingChange;
+      const { game_id, change_type, game_title, description, difficulty, image_url, game_url, game_type, enabled, controls } = pendingChange;
 
       if (change_type === 'CREATE') {
         const game = await this.prisma.game.create({
@@ -207,10 +227,29 @@ export class GamesService {
             game_url,
             game_type: game_type || 'external',
             enabled,
+            controls: controls ? {
+              create: (controls as any[]).map((control, index) => ({
+                key_image: control.key_image,
+                description: control.description,
+                order: index,
+              })),
+            } : undefined,
+          },
+          include: {
+            controls: {
+              orderBy: { order: 'asc' },
+            },
           },
         });
         return { message: 'Jogo aprovado e criado com sucesso', game };
       } else if (change_type === 'UPDATE' && game_id) {
+        // Se controls foi enviado, deletar os antigos e criar novos
+        if (controls !== null && controls !== undefined) {
+          await this.prisma.gameControl.deleteMany({
+            where: { game_id },
+          });
+        }
+
         const game = await this.prisma.game.update({
           where: { game_id },
           data: {
@@ -221,6 +260,18 @@ export class GamesService {
             game_url,
             game_type: game_type || 'external',
             enabled,
+            controls: controls ? {
+              create: (controls as any[]).map((control, index) => ({
+                key_image: control.key_image,
+                description: control.description,
+                order: index,
+              })),
+            } : undefined,
+          },
+          include: {
+            controls: {
+              orderBy: { order: 'asc' },
+            },
           },
         });
         return { message: 'Alteração aprovada e aplicada com sucesso', game };
@@ -247,9 +298,16 @@ export class GamesService {
       throw new ConflictException('Você não tem permissão para editar esta solicitação');
     }
 
+    // Serialize controls if present
+    const { controls, ...otherData } = updateData;
+    const dataToUpdate = {
+      ...otherData,
+      ...(controls !== undefined && { controls: controls ? JSON.parse(JSON.stringify(controls)) : null }),
+    };
+
     const updated = await this.prisma.gamePending.update({
       where: { change_id: changeId },
-      data: updateData,
+      data: dataToUpdate,
     });
 
     return updated;
