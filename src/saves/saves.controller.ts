@@ -10,9 +10,9 @@ export class SavesController {
   constructor(private readonly savesService: SavesService) {}
 
   @Get()
-  async getSave(@Request() req, @Query('save_slot') saveSlot: string = '1') {
+  async getSave(@Request() req) {
     const userId = req.user.user_id;
-    return this.savesService.getSave(userId, parseInt(saveSlot));
+    return this.savesService.getSave(userId);
   }
 
   @Post()
@@ -25,20 +25,18 @@ export class SavesController {
   async getHighscore(
     @Request() req,
     @Param('gameId') gameId: string,
-    @Query('save_slot') saveSlot: string = '1',
   ) {
     const userId = req.user.user_id;
-    return this.savesService.getHighscore(userId, parseInt(gameId), parseInt(saveSlot));
+    return this.savesService.getHighscore(userId, parseInt(gameId));
   }
 
   @Post('highscore')
   async updateHighscore(
     @Request() req,
     @Body() updateHighscoreDto: UpdateHighscoreDto,
-    @Query('save_slot') saveSlot: string = '1',
   ) {
     const userId = req.user.user_id;
-    return this.savesService.updateHighscore(userId, updateHighscoreDto, parseInt(saveSlot));
+    return this.savesService.updateHighscore(userId, updateHighscoreDto);
   }
 
   @Get('leaderboard/:gameId')

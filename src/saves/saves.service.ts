@@ -7,13 +7,10 @@ import { UpdateHighscoreDto } from './dto/update-highscore.dto';
 export class SavesService {
   constructor(private prisma: PrismaService) {}
 
-  async getSave(userId: number, saveSlot: number = 1) {
+  async getSave(userId: number) {
     let save = await this.prisma.save.findUnique({
       where: {
-        user_id_save_slot: {
-          user_id: userId,
-          save_slot: saveSlot,
-        },
+        user_id: userId,
       },
       include: {
         highscores: {
@@ -28,7 +25,6 @@ export class SavesService {
       save = await this.prisma.save.create({
         data: {
           user_id: userId,
-          save_slot: saveSlot,
         },
         include: {
           highscores: {
@@ -44,14 +40,11 @@ export class SavesService {
   }
 
   async saveGame(userId: number, saveGameDto: SaveGameDto) {
-    const { game_id, save_slot, save_data } = saveGameDto;
+    const { save_data } = saveGameDto;
 
     let save = await this.prisma.save.findUnique({
       where: {
-        user_id_save_slot: {
-          user_id: userId,
-          save_slot: save_slot,
-        },
+        user_id: userId,
       },
     });
 
@@ -59,7 +52,6 @@ export class SavesService {
       save = await this.prisma.save.create({
         data: {
           user_id: userId,
-          save_slot: save_slot,
           save_data: save_data,
         },
       });
@@ -73,8 +65,8 @@ export class SavesService {
     return save;
   }
 
-  async getHighscore(userId: number, gameId: number, saveSlot: number = 1) {
-    const save = await this.getSave(userId, saveSlot);
+  async getHighscore(userId: number, gameId: number) {
+    const save = await this.getSave(userId);
 
     const highscore = await this.prisma.highscore.findFirst({
       where: {
@@ -93,10 +85,10 @@ export class SavesService {
     return highscore;
   }
 
-  async updateHighscore(userId: number, updateHighscoreDto: UpdateHighscoreDto, saveSlot: number = 1) {
+  async updateHighscore(userId: number, updateHighscoreDto: UpdateHighscoreDto) {
     const { game_id, score } = updateHighscoreDto;
 
-    const save = await this.getSave(userId, saveSlot);
+    const save = await this.getSave(userId);
 
     let highscore = await this.prisma.highscore.findFirst({
       where: {
