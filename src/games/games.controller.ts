@@ -45,6 +45,15 @@ export class GamesController {
     return this.gamesService.getMyPendingGames(user!.user_id);
   }
 
+  @Get('all/my')
+  @UseGuards(FirebaseAuthGuard, ModeratorGuard)
+  async getMyAll(@Request() req) {
+    const user = await this.prisma.user.findUnique({
+      where: { firebase_uid: req.user.uid },
+    });
+    return this.gamesService.getMyAllGames(user!.user_id);
+  }
+  
   @Get('pending')
   @UseGuards(FirebaseAuthGuard, AdminGuard)
   getPending() {

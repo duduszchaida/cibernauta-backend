@@ -24,7 +24,7 @@ model User {
   created_at   DateTime @default(now())
 
   saves                Save[]
-  gamePendingChanges   GamePending[]
+  gameRequests         GameRequest[]
   moderatorRequests    ModeratorRequest[]  @relation("ModeratorRequests")
   reviewedRequests     ModeratorRequest[]  @relation("ReviewedRequests")
 
@@ -60,15 +60,14 @@ model GameControl {
 }
 
 model Save {
-  save_id   Int    @id @default(autoincrement())
-  save_slot Int    @default(1)
-  user_id   Int
-  save_data String? @db.Text
+  save_id   Int      @id @default(autoincrement())
+  user_id   Int      @unique
+  save_data String?  @db.Text
+  updated_at DateTime @default(now()) @updatedAt
 
   user       User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
   highscores Highscore[]
 
-  @@unique([user_id, save_slot])
   @@map("save")
 }
 
@@ -96,25 +95,26 @@ enum ChangeStatus {
   REJECTED
 }
 
-model GamePending {
-  change_id         Int          @id @default(autoincrement())
-  game_id           Int?
-  change_type       ChangeType
-  status            ChangeStatus @default(PENDING)
-  game_title        String       @db.VarChar(50)
-  description       String       @db.Text
-  difficulty        Int
-  image_url         String?      @db.Text
-  game_url          String?      @db.Text
-  game_type         String       @default("external") @db.VarChar(20)
-  enabled           Boolean      @default(true)
-  created_by_user_id Int         @default(1)
-  created_at        DateTime     @default(now())
-  reviewed_at       DateTime?
+model GameRequest {
+  request_id         Int          @id @default(autoincrement())
+  game_id            Int?
+  change_type        ChangeType
+  status             ChangeStatus @default(PENDING)
+  game_title         String       @db.VarChar(50)
+  description        String       @db.Text
+  difficulty         Int
+  image_url          String?      @db.Text
+  game_url           String?      @db.Text
+  game_type          String       @default("external") @db.VarChar(20)
+  enabled            Boolean      @default(true)
+  controls           Json?
+  created_by_user_id Int          @default(1)
+  created_at         DateTime     @default(now())
+  reviewed_at        DateTime?
 
   createdBy User @relation(fields: [created_by_user_id], references: [user_id], onDelete: Cascade)
 
-  @@map("game_pending_changes")
+  @@map("game_request")
 }
 
 enum RequestStatus {
