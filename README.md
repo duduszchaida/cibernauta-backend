@@ -1,131 +1,110 @@
-# Cibernauta - IFPR
+## ATENÇÃO!!!
 
-
-## Tecnologias Utilizadas
-
-### Backend
-- NestJS - Framework Node.js para APIs
-- TypeScript - Linguagem de programação
-- PostgreSQL - Banco de dados relacional
-- Prisma - ORM (Object-Relational Mapping)
-- Firebase Admin SDK - Autenticação
-
-### Frontend
-- React 18 - Biblioteca JavaScript
-- Vite - Build tool e dev server
-- TypeScript - Linguagem de programação
-- Tailwind CSS - Framework de estilização
-- Firebase - Autenticação
----
+Nosso projeto está hospedado na vercel e pode ser acessado em https://cibernauta-frontend.vercel.app/, mas caso deseja recria-lo localmente só seguir os passos abaixo:
 
 ## Pré-requisitos
 
-Certifique-se de ter instalado:
+- Node.js 22
+- PostgreSQL 14
 
-   Node.js (versão 18 ou superior)
-   PostgreSQL (versão 12 ou superior)
+## Instalação Rápida
 
----
+### 1. Instalar Dependências
 
-## Instalação
-
-### Passo 1: Preparar o Ambiente
-
-Abra o terminal/prompt de comando e navegue até a pasta do projeto:
-
-cd C:\Users\eduar\Documents\IFPR\projeto
-
-### Passo 2: Instalar Dependências do Backend
-
+```bash
+# Backend
+# Navegar até o projeto do back e instalar pacotes do node
 cd cibernauta-backend
 npm install
 
-Este comando instalará todas as dependências necessárias do backend (NestJS, Prisma, Firebase, etc.).
-
-### Passo 3: Instalar Dependências do Frontend
-
-Abra outra janela do terminal/promp, vá até a pasta do projeto e instale as dependências do frontend:
-
+# Frontend
+# Navegar até o projeto do front e instalar pacotes do node
 cd cibernauta-frontend
 npm install
+```
 
-Este comando instalará todas as dependências do frontend (React, Vite, Tailwind CSS, etc.).
+### 2. Configurar Banco de Dados
 
----
+O projeto já está configurado para usar um banco PostgreSQL remoto que esta hospedado em uma virtual machine da Oracle. Caso deseje usar nosso banco e nosso projeto do Firabase substitua o conteúdo dos arquivos .env dos projetos front-end e back-end pelo conteúdo dos arquivos ".env-frontend" e ".env-backend" presentes em cada projeto (apenas na versão enviada por arquivo compactado, pois eles incluiem informações vitais). Se preferir usar um banco local, edite em .env pelos acessos do seu banco que prefirir.
 
-## Configuração
+Exemplo:
 
-### Passo 1: Iniciar o Backend
+```env
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/cibernauta?schema=public"
+```
 
-No terminal na pasta cibernauta-backend:
+### 3. Inicializar Banco de Dados, faça esse passo caso queira criar um banco local, caso não, apenas pule essa etapa
 
+```bash
+# Navegar até o projeto do back
+cd cibernauta-backend
+
+# Criar tabelas
+npx prisma migrate deploy
+
+# Popular com dados de exemplo
+npx prisma db seed
+```
+
+### 4. Iniciar Aplicação
+
+```bash
+# Terminal 1 - Backend
+cd cibernauta-backend
+npx prisma generate
 npm run start:dev
 
-O servidor backend estará rodando em: http://localhost:3001
-
-### Passo 2: Iniciar o Frontend
-
-No outro terminal na pasta cibernauta-frontend:
-
+# Terminal 2 - Frontend
+cd cibernauta-frontend
 npm run dev
+```
 
-O servidor frontend estará rodando em: http://localhost:5173
+Acesse: `http://localhost:5173`
 
-### Passo 3: Acessar o Sistema
+## Criar Conta de Administrador
 
-Abra seu navegador e acesse: http://localhost:5173
+### Caso esteja usando nosso banco, o usuario [...] senha: [...] tem acesso admin, mas caso criou um banco totalmente novo siga os passos abaixo
 
----
+### 1. Criar Conta e torna-lá admin
 
-## Navegação e Uso
+- Acesse `http://localhost:5173`
+- Clique em "Cadastrar-se"
+- Preencha os dados e crie sua conta
 
-### 1. Página Inicial
+### Você terá duas opções
 
-Ao acessar http://localhost:5173, você verá a página inicial do sistema.
+## 1- Opção
 
-### 2. Cadastro de Usuário
+Verificar a conta que você criou, pois chegará um email na conta que você utilizou no cadastro com o link para confirmação.
+Depois rodar no banco o comando `UPDATE users SET role = 'ADMIN' WHERE user_email = 'seu-email@example.com';`,
+altere seu-email@example.com pelo seu email utilizado no cadastro.
 
-1. Clique no botão "Cadastrar-se"
-2. Preencha o formulário com:
-   - Nome
-   - Email
-   - Senha (mínimo 6 caracteres)
-3. Clique em "Criar conta"
-4. Você será redirecionado automaticamente após o cadastro
+## 2- Opção
 
-### 3. Login
+Volte ao terminal do backend (Terminal 1) e execute:
 
-1. Se já tiver uma conta, insira seu email e senha
-3. Clique em "Entrar"
+```bash
+npm run create-admin
+```
 
-### 4. Dashboard de Jogos
+Quando solicitado, digite o email que você usou no cadastro.
 
-Após o login, você será redirecionado para o dashboard com:
+O script irá:
 
-- Lista de Jogos Disponíveis: Visualize todos os jogos cadastrados
-- Informações do Jogo: Título, descrição, dificuldade, imagem
+- Promover sua conta para administrador
+- Verificar automaticamente o email (sem necessidade de clicar em links de verificação)
 
-### 5. Jogando
+Agora você tem acesso completo ao sistema.
 
-1. Na lista de jogos, clique no card de um jogo específico
-2. Você será redirecionado para a tela do jogo
-3. Seu progresso e pontuação serão salvos automaticamente
+## Portas Utilizadas
 
+- Backend: `http://localhost:3001`
+- Frontend: `http://localhost:5173`
 
-### 6. Área Administrativa
+### Erro ao conectar com banco
 
-Se sua conta tiver permissões de administrador:
+Verifique se o PostgreSQL está rodando e as credenciais em `.env` estão corretas.
 
-1. Criar Novo Jogo:
-   - Clique em "Criar Jogo" no dashboard de games
-   - Preencha: título, descrição, dificuldade, URL da imagem
-   - Clique em "Salvar"
+### Erro de autenticação
 
-2. Editar Jogo:
-   - Na lista de jogos, clique em "Editar"
-   - Modifique os campos necessários
-   - Clique em "Salvar Alterações"
-
-3. Excluir Jogo:
-   - Na lista de jogos, clique em "Excluir"
-   - Confirme a exclusão
+As credenciais do Firebase já estão configuradas nos arquivos `.env`. Se houver problemas, verifique se os valores estão corretos.
