@@ -82,7 +82,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const { identifier } = loginDto;
+    const { identifier, password } = loginDto;
 
 
     const user = await this.prisma.user.findFirst({
@@ -102,6 +102,35 @@ export class AuthService {
 
     if (!firebaseUser.emailVerified) {
       throw new UnauthorizedException('Email não verificado. Verifique sua caixa de entrada.');
+    }
+
+  
+    try {
+      const apiKey = this.configService.get('FIREBASE_WEB_API_KEY');
+      const verifyResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: user.user_email,
+            password: password,
+            returnSecureToken: true,
+          }),
+        }
+      );
+
+      if (!verifyResponse.ok) {
+        throw new UnauthorizedException('Credenciais inválidas');
+      }
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Erro ao verificar senha:', error);
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const customToken = await this.firebaseAdmin.auth().createCustomToken(user.firebase_uid);
